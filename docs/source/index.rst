@@ -40,7 +40,8 @@ Adding Dependency
       ``implementation 'com.google.android.gms:play-services-location:11.8.0'``
       ``implementation 'com.google.android.gms:play-services-maps:11.8.0'``
       ``implementation 'com.google.code.gson:gson:2.6.2'``
-   ``}``
+	``}``
+
 
 - Add following application permissions to AndroidManifest.xml .
 
@@ -63,7 +64,7 @@ Adding code snipet to fetch the user location detail :
 	``}``
 	
 	* This instantiate a LocationProvider with default config of **30 meter** displacement and **15 minutes** waiting duration for next location response .
-	Other custom configurations can be done
+	  Other custom configurations can be done
 	
 	``LocationProvider mLocationProvider = builder.withContext(mContext)``
 	             ``.withDistance(100)  // 100 meter displacement``
@@ -99,9 +100,13 @@ Adding code snipet to fetch the user location detail :
 	``}``
 	
 	* Now once you receive current location of user inside **onLocationReceived()** , then fetch excllusive offers near by user location .
-	Activity must implement IResponseListner interface to receive success / failure callbacks of API call.
+	  Activity must implement IResponseListner interface to receive success / failure callbacks of API call.
 	
 	``public class MainActivity extends AppCompatActivity implements ILocationReceivedCallback, IResponseListner {``
+	
+	* Create **Request** object, pass user id as **custId**, pass **latitude**, **longitude** and **IResponseListner** **listner** 
+	  to **fetchoffers** this will Fetch exclusive offers for the customers and response will be received in  **onResponse** and if any failure occured
+	  it will be received in **onFailure** 
 	
 	``@Override``
 	``public void onLocationReceived(Location location) {``
@@ -112,7 +117,7 @@ Adding code snipet to fetch the user location detail :
 	
 	``@Override``
 	``public void onResponse(JSONArray jsonArray) {``
-		``Log.d(TAG, "Response received !" + jsonArray.toString());``
+        ``Log.d(TAG, "Response received !" + jsonArray.toString());``
 		``Toast.makeText(mContext,"Response received !" + jsonArray.toString() , Toast.LENGTH_SHORT).show();``
 	``}``
 
