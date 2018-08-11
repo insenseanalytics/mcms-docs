@@ -20,7 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = u'mcms_android_lib'
-copyright = u'2018, Amit Kumar Kannaujiya'
+copyright = u'Insense PVT LTD'
 author = u'Amit Kumar Kannaujiya'
 
 # The short X.Y version
