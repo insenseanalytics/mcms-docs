@@ -1,5 +1,5 @@
 Insense Mobile Campaign Management System (mCMS) Android Library
-=========================================================
+================================================================
 
 Introduction
 ============
@@ -66,7 +66,7 @@ Add the following application permissions to AndroidManifest.xml to access the u
        <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 	
 Code Integration for Listening to Location Changes
----------------------------------------------------
+--------------------------------------------------
 
 To fetch the user's location, note the steps below:
 
@@ -76,7 +76,6 @@ To fetch the user's location, note the steps below:
 
 		LocationProvider.Builder builder =  new LocationProvider.Builder();
 		LocationProvider mLocationProvider = builder.withContext(mContext)
-			.withListener(this)          // the container class must implement ILocationReceivedCallback
 			.build();
 	
 2. The default configuration for listening to the user's location is a min. **30 meter** displacement and **5 minutes** update frequency for the next location callback trigger. You may customize this configuration as follows:
@@ -86,10 +85,9 @@ To fetch the user's location, note the steps below:
 	   LocationProvider mLocationProvider = builder.withContext(mContext)
 		.withDistance(100)  // 100 meter displacement
 		.withDuration(10)  // for location updates at a 10 min. frequency
-		.withListener(this)
 		.build();
 				 
-3. Your listener class must implement the **ILocationReceivedCallback interface**, to receive locationUpdates. In the examples above, we have assumed that the class that creates the instance is also the listener class using **withListener(this)**. This interface has a callback method **onLocationReceived** which will contain the location of the user. An example is as follows:
+3. Your listener class must implement the **ILocationReceivedCallback interface**, to receive locationUpdates. This interface has a callback method **onLocationReceived** which will contain the location of the user. An example is as follows:
 
 .. code:: java
        
@@ -98,7 +96,7 @@ To fetch the user's location, note the steps below:
 		Log.d(TAG, "Location received : lat => "+ location.getLongitude() + " long=> " +location.getLongitude());
 	}
 	
-4. After initilization, register/remove the location request listener in using the methods **setupLocationRequest** and **stopLocationUpdates**. An example is as follows:
+4. After initilization, register/remove the location request listener in using the methods **registerLocationUpdate** and **unregisterLocationUpdate**. An example is as follows:
 
 .. code:: java
 
@@ -106,7 +104,7 @@ To fetch the user's location, note the steps below:
 	   protected void onStart() {
 		  super.onStart();
 		  if(mLocationProvider!=null) {
-			 mLocationProvider.setupLocationRequest();
+			 mLocationProvider.registerLocationUpdate(this);
 		  }
 	  }
 
@@ -114,21 +112,75 @@ To fetch the user's location, note the steps below:
 	  protected void onDestroy() {
 		 super.onDestroy();
 		 if(mLocationProvider!=null) {
-			mLocationProvider.stopLocationUpdates();
+			mLocationProvider.unregisterLocationUpdate(this);
 		 }
 	  }
 	
 Code Integration for Sending Location Updates to Insense's API
 --------------------------------------------------------------
 
-Code Integration for Fetching Offers through Insense's API
-----------------------------------------------------------
-
-1. For listening to any Insense API success or failure responses, your class must implement the **IResponseListener interface**. An example is as follows:
+1. For listening to Send Location Update Insense API success or failure responses, your class must implement the **IResponseListener<JSONObject> interface**. An example is as follows:
 	  
 .. code:: java	
 
-	   public class MainActivity extends AppCompatActivity implements ILocationReceivedCallback, IResponseListener {``
+	   public class MainActivity extends AppCompatActivity implements ILocationReceivedCallback, IResponseListener<JSONObject> {
+	
+2. Next, create a **Request** object and call the **sendUserLocation** method while passing the API Url, customer ID, latitude, longitude and response listener instance parameters as in the example below. This will hit Insense Send Location Request API and the response will be received in  **onResponse** (if success) or **OnFailure** (if failure)
+
+.. code:: java	
+
+	@Override
+	public void onLocationReceived(Location location) {
+		Request mRequest = new Request(mContext);
+		String custId = "USER_CUST_ID"   // Current User CustomerId;
+		String url = "LOCATION_REQUEST_API_URL"
+		mRequest.sendUserLocation(url, custId, location.getLatitude(), location.getLongitude(), this);
+	}
+
+	@Override
+	public void onResponse(JSONObject result) {
+		Log.d(TAG, "SEND_USER_LOCATION is success" + result.toString());
+	}
+
+	@Override
+	public void onFailure(Throwable throwable) {
+		Log.d(TAG, "SEND_USER_LOCATION is failed" + throwable.getMessage());
+	}
+	
+3. Finally, parse the JSONArray response to get the offer details.
+
+4. Instead of implementing **IResponseListener<T>** interface for different class type, use anonymous Inner class listener for success or failure responses .
+
+.. code:: java	
+
+	@Override
+	public void onLocationReceived(Location location) {
+		Request mRequest = new Request(mContext);
+		String custId = "USER_CUST_ID"   // Current User CustomerId;
+		String url = "LOCATION_REQUEST_API_URL"
+		mRequest.sendUserLocation(url, custId, location.getLatitude(), location.getLongitude(), iResponseObjectListener);
+	}
+
+	IResponseListener<JSONObject> iResponseObjectListener = new IResponseListener<JSONObject>() {
+		@Override
+		public void onResponse(JSONObject result) {
+			Log.d(TAG, "LOCATION_UPDATE is success" + result.toString());
+		}
+
+		@Override
+		public void onFailure(Throwable throwable) {
+			Log.d(TAG, "LOCATION_UPDATE is failed" + throwable.getMessage());
+		}
+	};
+
+Code Integration for Fetching Offers through Insense's API
+----------------------------------------------------------
+
+1. For listening to Fetch Insense Offers API success or failure responses, your class must implement the **IResponseListener<JSONArray> interface**. An example is as follows:
+	  
+.. code:: java	
+
+	   public class MainActivity extends AppCompatActivity implements ILocationReceivedCallback, IResponseListener<JSONArray> {
 	
 2. Next, create a **Request** object and call the **fetchOffers** method while passing the customer ID, latitude, longitude and response listener instance parameters as in the example below. This will fetch the offers for the customers and the response will be received in  **onResponse** (if success) or **OnFailure** (if failure)
 
@@ -153,7 +205,32 @@ Code Integration for Fetching Offers through Insense's API
 		Toast.makeText(mContext,"Failed : " + throwable.getMessage() , Toast.LENGTH_SHORT).show();
 	}
 	
-3. Finally, parse the JSONArray response to get the offer details
+3. Finally, parse the JSONArray response to get the offer details .
+
+4. Similar to Location update API call, anonymous Inner class listener can be used for success or failure responses .
+
+.. code:: java	
+
+	@Override
+	public void onLocationReceived(Location location) {
+		Request mRequest = new Request(mContext);
+		String custId = "USER_CUST_ID"   // Current User CustomerId;
+		mRequest.fetchOffers(custId, location.getLatitude(), location.getLongitude(), iResponseArrayListener);
+	}
+
+	IResponseListener<JSONArray> iResponseArrayListener = new IResponseListener<JSONArray>() {
+		@Override
+		public void onResponse(JSONArray jsonArray) {
+			Log.d(TAG, "Response received !" + jsonArray.toString());
+			Toast.makeText(mContext,"Response received !" + jsonArray.toString() , Toast.LENGTH_SHORT).show();
+		}
+
+		@Override
+		public void onFailure(Throwable throwable) {
+			Log.d(TAG, "Failed : " + throwable.getMessage());
+			Toast.makeText(mContext,"Failed : " + throwable.getMessage() , Toast.LENGTH_SHORT).show();
+		}
+	};
 	
 	
 .. toctree::
