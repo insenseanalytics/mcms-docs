@@ -1,23 +1,23 @@
-Documentation for Insense MCMS Android Lib
-============================================
+Insense Mobile Campaign Management System (mCMS) Android Library
+=========================================================
 
 Introduction
 ============
-Import this android library module to fetch exclusive insense offers details for near by location of users .
-This library suports minimium of SDK version 15 i.e Ice Cream Sandwich android devices .
+Import this Android Library module to send the user's location to Insense's API at a regular interval.
+This library suports a minimium SDK version of 15, i.e, Ice Cream Sandwich and above Android devices.
 
 
 Installation Guide
 ==================
 
-Add Insense AAR File 
+Import AAR File 
 --------------------
-Add insense AAR file as a module dependency to your project, proceed as follows:
+Add Insense's AAR file as a module dependency to your project as follows:
 1. Add the compiled AAR (or JAR) file
 
-  * Click **File > New > New Module**.;
-  * Click **Import .JAR/.AAR Package** then click **Next**.;
-  * Enter the location of the compiled AAR or JAR file then click **Finish**.;
+  * Click **File > New > New Module**
+  * Click **Import .JAR/.AAR Package** then click **Next**
+  * Enter the location of the compiled AAR or JAR file then click **Finish**
   
 2. Make sure the library is listed at the top of your **settings.gradle** file, as shown here for a library named **"my-library-module"**:
 
@@ -30,14 +30,22 @@ Add insense AAR file as a module dependency to your project, proceed as follows:
 .. code:: java
 
   	   dependencies {
-           implementation project(":my-library-module")
+       		implementation project(":my-library-module")
 	   }
 	
-4. Click **Sync Project with Gradle Files**.
+4. Click **Sync Project with Gradle Files**
 
-Adding Dependency
------------------
-- Add the following code in your **build.gradle** file under app module, version of different packages may change, if already had same package then no need to add again
+Adding Third Party Dependencies
+-------------------------------
+This library uses the following third party dependencies:
+
+- **Android Volley**: For API request calls
+- **Google Play Services Location**: For listening to the user's location
+- **Google GSON Library**: For JSON manipulation
+
+If you are already using these dependencies, you do not need to add them again. However, if some the above dependencies are not currently used, you may add the same as follows:
+
+**Update your build.gradle** file under app module like so:
 
 .. code:: java
 
@@ -49,53 +57,48 @@ Adding Dependency
        }
 
 
-- Add following application permissions to AndroidManifest.xml .
+Permissions
+-----------
+Add the following application permissions to AndroidManifest.xml to access the user's location in case you already do not have these in the app:
 
 .. code:: java
 
        <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 	
-Code Integration
------------------
-Adding code snipet to fetch the user location detail :
-	* Create instance of LocationProvider to access location detail of user .
+Code Integration for Listening to Location Changes
+---------------------------------------------------
+
+To fetch the user's location, note the steps below:
+
+1. Create an instance of LocationProvider to access the user's location:
 
 .. code:: java
 
-	   @Override
-	   protected void onCreate(Bundle savedInstanceState) {
-	       super.onCreate(savedInstanceState);
-		   setContentView(R.layout.activity_main);
-		   this.mContext = this;
-		   LocationProvider.Builder builder =  new LocationProvider.Builder();
-		   LocationProvider mLocationProvider = builder.withContext(mContext)
-					.withListener(this)          // activity must implemet ILocationReceivedCallback
-					.build();
-	   }
+		LocationProvider.Builder builder =  new LocationProvider.Builder();
+		LocationProvider mLocationProvider = builder.withContext(mContext)
+			.withListener(this)          // the container class must implement ILocationReceivedCallback
+			.build();
 	
-- This instantiate a LocationProvider with default config of **30 meter** displacement and **15 minutes** waiting duration for next location response .
-	  Other custom configurations can be done.
+2. The default configuration for listening to the user's location is a min. **30 meter** displacement and **5 minutes** update frequency for the next location callback trigger. You may customize this configuration as follows:
 	
 .. code:: java	
 	
 	   LocationProvider mLocationProvider = builder.withContext(mContext)
-	      .withDistance(100)  // 100 meter displacement
-		  .withDuration(10)  // 10 minutes wait duration
-		  .withListener(this)
-		  .build();
+		.withDistance(100)  // 100 meter displacement
+		.withDuration(10)  // for location updates at a 10 min. frequency
+		.withListener(this)
+		.build();
 				 
-- Activity/Fragment class must implement **ILocationReceivedCallback interface**, to receive locationUpdates , this interface instance is assigned to LocationProvider **.withListener(this)**
+3. Your listener class must implement the **ILocationReceivedCallback interface**, to receive locationUpdates. In the examples above, we have assumed that the class that creates the instance is also the listener class using **withListener(this)**. This interface has a callback method **onLocationReceived** which will contain the location of the user. An example is as follows:
 
 .. code:: java
        
-	   public class MainActivity extends AppCompatActivity implements ILocationReceivedCallback {
-   
-       @Override
-	   public void onLocationReceived(Location location) {
-		   Log.d(TAG, "Location received : lat => "+ location.getLongitude() + " long=> " +location.getLongitude());
-	   }
+	@Override
+	public void onLocationReceived(Location location) {
+		Log.d(TAG, "Location received : lat => "+ location.getLongitude() + " long=> " +location.getLongitude());
+	}
 	
-- After initilization, register/remove the location request listener in **onStart()** / **onDestroy()** of your activity, you can add same in **onResume()** / **onPause()** of your activity
+4. After initilization, register/remove the location request listener in using the methods **setupLocationRequest** and **stopLocationUpdates**. An example is as follows:
 
 .. code:: java
 
@@ -115,50 +118,45 @@ Adding code snipet to fetch the user location detail :
 		 }
 	  }
 	
-- Now once you receive current location of user inside **onLocationReceived()** , then fetch excllusive offers near by user location .
-	  Activity must implement IResponseListner interface to receive success / failure callbacks of API call.
+Code Integration for Sending Location Updates to Insense's API
+--------------------------------------------------------------
+
+Code Integration for Fetching Offers through Insense's API
+----------------------------------------------------------
+
+1. For listening to any Insense API success or failure responses, your class must implement the **IResponseListener interface**. An example is as follows:
 	  
 .. code:: java	
 
-	   public class MainActivity extends AppCompatActivity implements ILocationReceivedCallback, IResponseListner {``
+	   public class MainActivity extends AppCompatActivity implements ILocationReceivedCallback, IResponseListener {``
 	
-- Create **Request** object, pass user id as **custId**, pass **latitude**, **longitude** and **IResponseListner** **listner** 
-	  to **fetchoffers** this will Fetch exclusive offers for the customers and response will be received in  **onResponse** and if any failure occured
-	  it will be received in **onFailure** 
+2. Next, create a **Request** object and call the **fetchOffers** method while passing the customer ID, latitude, longitude and response listener instance parameters as in the example below. This will fetch the offers for the customers and the response will be received in  **onResponse** (if success) or **OnFailure** (if failure)
 
 .. code:: java	
 
-	   @Override
-	   public void onLocationReceived(Location location) {
-		  Request mRequest = new Request(mContext);
-		  String custId = "USER_CUST_ID"   // Current User CustomerId;
-		  mRequest.fetchOffers(custId, location.getLatitude(), location.getLongitude(), this);
-	  }
-	
-	 @Override
-	 public void onResponse(JSONArray jsonArray) {
-         Log.d(TAG, "Response received !" + jsonArray.toString());
-		 Toast.makeText(mContext,"Response received !" + jsonArray.toString() , Toast.LENGTH_SHORT).show();
-	 }
+	@Override
+	public void onLocationReceived(Location location) {
+		Request mRequest = new Request(mContext);
+		String custId = "USER_CUST_ID"   // Current User CustomerId;
+		mRequest.fetchOffers(custId, location.getLatitude(), location.getLongitude(), this);
+	}
 
-	 @Override
-	 public void onFailure(Throwable throwable) {
+	@Override
+	public void onResponse(JSONArray jsonArray) {
+		Log.d(TAG, "Response received !" + jsonArray.toString());
+		Toast.makeText(mContext,"Response received !" + jsonArray.toString() , Toast.LENGTH_SHORT).show();
+	}
+
+	@Override
+	public void onFailure(Throwable throwable) {
 		Log.d(TAG, "Failed : " + throwable.getMessage());
 		Toast.makeText(mContext,"Failed : " + throwable.getMessage() , Toast.LENGTH_SHORT).show();
-	 }
+	}
 	
--parse the JSONArray response to get offer detail 
+3. Finally, parse the JSONArray response to get the offer details
 	
 	
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

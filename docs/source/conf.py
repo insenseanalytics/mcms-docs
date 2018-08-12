@@ -19,9 +19,9 @@
 
 # -- Project information -----------------------------------------------------
 
-project = u'mcms_android_lib'
-copyright = u'Insense PVT LTD'
-author = u'Amit Kumar Kannaujiya'
+project = u'MCMS Android'
+copyright = u'Insense Private Limited'
+author = u'Insense Private Limited'
 
 # The short X.Y version
 version = u''
