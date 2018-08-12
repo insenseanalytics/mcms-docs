@@ -87,16 +87,7 @@ To fetch the user's location, note the steps below:
 		.withDuration(10)  // for location updates at a 10 min. frequency
 		.build();
 				 
-3. Your listener class must implement the **ILocationReceivedCallback interface**, to receive locationUpdates. This interface has a callback method **onLocationReceived** which will contain the location of the user. An example is as follows:
-
-.. code:: java
-       
-	@Override
-	public void onLocationReceived(Location location) {
-		Log.d(TAG, "Location received : lat => "+ location.getLongitude() + " long=> " +location.getLongitude());
-	}
-	
-4. After initilization, register/remove the location request listener in using the methods **registerLocationUpdate** and **unregisterLocationUpdate**. An example is as follows:
+3. After initilization, register/remove the location request listener in using the methods **registerLocationUpdate** and **unregisterLocationUpdate**. An example is as follows:
 
 .. code:: java
 
@@ -115,6 +106,15 @@ To fetch the user's location, note the steps below:
 			mLocationProvider.unregisterLocationUpdate(this);
 		 }
 	  }
+	  
+4. Your listener class must implement the **ILocationReceivedCallback interface**, to receive locationUpdates. This interface has a callback method **onLocationReceived** which will contain the location of the user. An example is as follows:
+
+.. code:: java
+       
+	@Override
+	public void onLocationReceived(Location location) {
+		Log.d(TAG, "Location received : lat => "+ location.getLongitude() + " long=> " +location.getLongitude());
+	}
 	
 Code Integration for Sending Location Updates to Insense's API
 --------------------------------------------------------------
