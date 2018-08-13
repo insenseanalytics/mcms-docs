@@ -68,7 +68,10 @@ Add the following application permissions to AndroidManifest.xml to access the u
 Code Integration for Listening to Location Changes
 --------------------------------------------------
 
-To fetch the user's location, note the steps below:
+To fetch the user's location, note the steps below for **forground / background** 
+
+Listen Forground Location Updates
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. Create an instance of LocationProvider to access the user's location:
 
@@ -115,6 +118,72 @@ To fetch the user's location, note the steps below:
 	public void onLocationReceived(Location location) {
 		Log.d(TAG, "Location received : lat => "+ location.getLongitude() + " long=> " +location.getLongitude());
 	}
+	
+Listen Background Location Updates
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1. As mentioned above instance creation of LocationProvider is same, only difference is to add to call **registerBackgroundLocationUpdates** and **unregisterBackgroundLocationUpdates** with passing **PendingIntent** . Define a BroadcastReceiver in AndroidManifest.xml .
+
+.. code:: java
+
+       <receiver
+            android:name=".broadcasts.LocationBroadcastReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.custom.android.ACTION_NEW_LOCATION"/>
+            </intent-filter>
+        </receiver>
+		
+2. Define a **PendingIntent** for that **BroadcastReceiver** as Similar to below code snippet in you **Activity/Application** Class.  	
+	   
+.. code:: java
+
+	   private PendingIntent getPendingIntent() {
+		  Intent intent = new Intent(mContext.getApplicationContext(), LocationBroadcastReceiver.class);
+		  intent.setAction(LocationBroadcastReceiver.ACTION_NEW_LOCATION); 
+		  return PendingIntent.getBroadcast(mContext, 1234, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+	   }
+	   
+3. After that, register/unregister the location update from background, using the methods **registerBackgroundLocationUpdates(PendingIntent)** and **unregisterBackgroundLocationUpdates**. An example is as follows:
+
+.. code:: java
+
+	   @Override
+	   protected void onCreate() {
+		  super.onCreate();
+		  LocationProvider.Builder builder =  new LocationProvider.Builder();
+		  LocationProvider mLocationProvider = builder.withContext(mContext)
+			              .build();
+		  if(mLocationProvider!=null) {
+			 mLocationProvider.registerBackgroundLocationUpdates(getPendingIntent());
+		  }
+	  }
+
+	  @Override
+	  protected void onTerminate() {
+		 super.onTerminate();
+		 if(mLocationProvider!=null) {
+			mLocationProvider.unregisterBackgroundLocationUpdates();
+		 }
+	  }
+
+4. The **onReceive()** method runs when the app receives a broadcast, which in our case contains location data. Update this method so it looks like this:
+
+.. code:: java
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if(intent!=null) {
+				if("com.custom.android.ACTION_NEW_LOCATION".equals(intent.getAction())) {
+					LocationResult result = LocationResult.extractResult(intent);
+					if (result != null) {
+						Location mLocation = result.getLastLocation();
+					}
+				}
+			}
+		}
+
+
 	
 Code Integration for Sending Location Updates to Insense's API
 --------------------------------------------------------------
@@ -234,6 +303,6 @@ Code Integration for Fetching Offers through Insense's API
 	
 	
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
